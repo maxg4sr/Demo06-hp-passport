@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="tw.hp.demo05.hp.passport.mapper.AdminMapper">
+
+    <!--  int insert(Admin admin); 下方VALUES屬性要與entity Brand
+    名字要對應上故要去除下滑線並駝峰命名 -->
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ams_admin(
+            username, password, nickname, avatar, phone,
+            email, description, enable, last_login_ip, login_count,
+            gmt_last_login, gmt_create, gmt_modified
+        ) VALUES(
+            #{username}, #{password}, #{nickname}, #{avatar}, #{phone},
+            #{email}, #{description}, #{enable}, #{lastLoginIp}, #{loginCount},
+            #{gmtLastLogin}, #{gmtCreate}, #{gmtModified}
+                )
+    </insert>
+
+    <!--    int countByUsername(String username);-->
+    <select id="countByUsername" resultType="int">
+    SELECT count(*) FROM ams_admin WHERE username=#{username}
+    </select>
+
+    <!--  List<AdminListItemVO> list();  -->
+    <select id="list" resultMap="ListItemResultMap">
+        SELECT
+        <include refid="ListItemQueryFields"/>
+        FROM ams_admin ORDER BY id;
+    </select>
+    <sql id="ListItemQueryFields">
+    id,username,nickname,phone,email,enable,description
+    </sql>
+    <resultMap id="ListItemResultMap" type="tw.hp.demo05.hp.passport.pojo.vo.AdminListItemVO">
+        <id column="id" property="id"></id>
+    </resultMap>
+
+    <!-- AdminLoginVO getByUsername(String username); -->
+    <select id="getByUsername" resultMap="LoginResultMap">
+        SELECT
+            ams_admin.id,
+            ams_admin.username,
+            ams_admin.password,
+            ams_admin.enable,
+            ams_permission.value
+        FROM
+            ams_admin
+                LEFT JOIN ams_admin_role ON ams_admin.id = ams_admin_role.admin_id
+                LEFT JOIN ams_role ON ams_admin_role.role_id = ams_role.id
+                LEFT JOIN ams_role_permission ON ams_role.id = ams_role_permission.role_id
+                LEFT JOIN ams_permission ON ams_role_permission.permission_id = ams_permission.id
+        WHERE
+            ams_admin.username=#{username};
+    </select>
+    <resultMap id="LoginResultMap" type="tw.hp.demo05.hp.passport.pojo.vo.AdminLoginVO">
+        <id column="id" property="id"/>
+        <result column="username" property="username"/>
+        <result column="password" property="password"/>
+        <result column="enable" property="enable"/>
+        <collection property="permissions" ofType="java.lang.String">
+        <constructor>
+        <!--    new String("/ams/admin/delete"    -->
+            <arg column="value"/>
+        </constructor>
+        </collection>
+    </resultMap>
+
+    <!-- 根據管理員ID刪除管理員數據 -->
+    <resultMap id="AdminListItemVOMap" type="tw.hp.demo05.hp.passport.pojo.vo.AdminListItemVO">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="nickname" column="nickname"/>
+        <result property="phone" column="phone"/>
+        <result property="email" column="email"/>
+        <result property="enable" column="enable"/>
+    </resultMap>
+
+    <select id="getById" parameterType="java.lang.Long" resultMap="AdminListItemVOMap">
+        SELECT id, username, nickname, phone, email, enable
+        FROM ams_admin
+        WHERE id = #{id}
+    </select>
+
+    <delete id="deleteById" parameterType="java.lang.Long">
+        DELETE FROM ams_admin
+        WHERE id = #{id}
+    </delete>
+
+    <update id="updateEnableState" parameterType="tw.hp.demo05.hp.passport.pojo.entity.Admin">
+        UPDATE admin
+        SET enable = #{enable}
+        WHERE id = #{id}
+    </update>
+
+
+</mapper>
